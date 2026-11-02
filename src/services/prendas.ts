@@ -22,3 +22,23 @@ export async function getPrendas(
   if (!res.ok) throw new Error("SERVIDOR");
   return res.json();
 }
+
+export async function getPrenda(id: string): Promise<Prenda> {
+  const res = await apiFetch(`/api/prendas/${id}/`);
+  if (!res.ok) throw new Error("SERVIDOR");
+  return res.json();
+}
+
+export async function toggleFavorito(id: number): Promise<boolean> {
+  const res = await apiFetch(`/api/prendas/${id}/favorito/`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("SERVIDOR");
+  const data = await res.json();
+  return data.es_favorito;
+}
+export async function getFavoritos(): Promise<Prenda[]> {
+  const res = await apiFetch("/api/prendas/favoritos/");
+  if (!res.ok) throw new Error("SERVIDOR");
+  return res.json();
+}

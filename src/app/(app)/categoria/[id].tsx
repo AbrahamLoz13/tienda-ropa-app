@@ -1,5 +1,10 @@
-import { Stack, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import {
+    Stack,
+    useFocusEffect,
+    useLocalSearchParams,
+    useRouter,
+} from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -23,6 +28,7 @@ export default function PrendasPorCategoria() {
     id: string;
     nombre?: string;
   }>();
+  const router = useRouter();
   const categoriaId = id && id !== "todas" ? id : undefined;
 
   const [prendas, setPrendas] = useState<Prenda[]>([]);
@@ -50,9 +56,18 @@ export default function PrendasPorCategoria() {
     [categoriaId],
   );
 
-  useEffect(() => {
-    cargar(1, true).finally(() => setLoading(false));
-  }, [cargar]);
+  const primeraVez = useRef(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (primeraVez.current) {
+        primeraVez.current = false;
+        cargar(1, true).finally(() => setLoading(false));
+      } else {
+        cargar(1, true);
+      }
+    }, [cargar]),
+  );
 
   const reintentar = () => {
     setLoading(true);
@@ -101,7 +116,17 @@ export default function PrendasPorCategoria() {
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => <PrendaCard prenda={item} />}
+        renderItem={({ item }) => (
+          <PrendaCard
+            prenda={item}
+            onPress={() =>
+              router.push({
+                pathname: "/prenda/[id]",
+                params: { id: String(item.id) },
+              })
+            }
+          />
+        )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
