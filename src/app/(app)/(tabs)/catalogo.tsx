@@ -122,6 +122,18 @@ export default function Catalogo() {
         <View style={styles.header}>
           <ThemedText type="subtitle">Catálogo</ThemedText>
         </View>
+        <Pressable
+          onPress={() => router.push("/buscar")}
+          accessibilityRole="search"
+          style={styles.searchWrap}
+        >
+          <ThemedView type="backgroundElement" style={styles.fakeSearch}>
+            <Ionicons name="search" size={18} color={theme.textSecondary} />
+            <ThemedText themeColor="textSecondary">
+              Buscar y filtrar prendas
+            </ThemedText>
+          </ThemedView>
+        </Pressable>
         {renderBody()}
       </SafeAreaView>
     </ThemedView>
@@ -133,6 +145,15 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  searchWrap: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.two },
+  fakeSearch: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    height: 44,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 12,
   },
   center: {
     flex: 1,

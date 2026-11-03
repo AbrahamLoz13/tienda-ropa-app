@@ -18,10 +18,9 @@ import { PrendaCard } from "@/components/prenda-card";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/SettingsContext";
 import { getPrendas } from "@/services/prendas";
 import type { Prenda } from "@/types/prenda";
-
-const PAGE_SIZE = 10;
 
 export default function PrendasPorCategoria() {
   const { id, nombre } = useLocalSearchParams<{
@@ -29,6 +28,7 @@ export default function PrendasPorCategoria() {
     nombre?: string;
   }>();
   const router = useRouter();
+  const { pageSize } = useSettings();
   const categoriaId = id && id !== "todas" ? id : undefined;
 
   const [prendas, setPrendas] = useState<Prenda[]>([]);
@@ -43,7 +43,7 @@ export default function PrendasPorCategoria() {
     async (p: number, reemplazar: boolean) => {
       try {
         setError(false);
-        const data = await getPrendas(p, PAGE_SIZE, { categoria: categoriaId });
+        const data = await getPrendas(p, pageSize, { categoria: categoriaId });
         setPrendas((prev) =>
           reemplazar ? data.results : [...prev, ...data.results],
         );
@@ -53,7 +53,7 @@ export default function PrendasPorCategoria() {
         setError(true);
       }
     },
-    [categoriaId],
+    [categoriaId, pageSize],
   );
 
   const primeraVez = useRef(true);
