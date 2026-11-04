@@ -1,21 +1,17 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    StyleSheet,
-    TextInput,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
+import { PrimaryButton } from "@/components/primary-button";
+import { TextField } from "@/components/text-field";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/hooks/use-theme";
 import { login } from "@/services/auth";
 
 export default function LoginScreen() {
-  const theme = useTheme();
+  const router = useRouter();
   const { signIn } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -43,46 +39,38 @@ export default function LoginScreen() {
     }
   };
 
-  const inputStyle = [
-    styles.input,
-    { backgroundColor: theme.backgroundElement, color: theme.text },
-  ];
-
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="subtitle" style={styles.title}>
         Iniciar sesión
       </ThemedText>
-      <TextInput
-        placeholder="Usuario"
-        placeholderTextColor={theme.textSecondary}
+
+      <TextField
+        label="Usuario"
         value={username}
         onChangeText={setUsername}
         autoCapitalize="none"
         autoCorrect={false}
         editable={!loading}
-        style={inputStyle}
       />
-      <TextInput
-        placeholder="Contraseña"
-        placeholderTextColor={theme.textSecondary}
+      <TextField
+        label="Contraseña"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         editable={!loading}
-        style={inputStyle}
       />
-      <Pressable
-        onPress={handleLogin}
-        disabled={loading}
-        style={[styles.button, loading && styles.buttonDisabled]}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>Entrar</ThemedText>
-        )}
-      </Pressable>
+
+      <PrimaryButton title="Entrar" onPress={handleLogin} loading={loading} />
+
+      <View style={styles.footer}>
+        <ThemedText type="small" themeColor="textSecondary">
+          ¿No tienes cuenta?
+        </ThemedText>
+        <Pressable onPress={() => router.push("/register")}>
+          <ThemedText type="link">Regístrate</ThemedText>
+        </Pressable>
+      </View>
     </ThemedView>
   );
 }
@@ -94,15 +82,11 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     gap: Spacing.three,
   },
-  title: { textAlign: "center", marginBottom: Spacing.three },
-  input: { height: 48, borderRadius: 8, paddingHorizontal: Spacing.three },
-  button: {
-    backgroundColor: "#208AEF",
-    height: 48,
-    borderRadius: 8,
+  title: { textAlign: "center", marginBottom: Spacing.two },
+  footer: {
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: Spacing.two,
   },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  buttonDisabled: { opacity: 0.6 },
 });
