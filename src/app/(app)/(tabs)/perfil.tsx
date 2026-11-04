@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,22 +9,11 @@ import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
-import { apiFetch } from "@/services/api";
-
-type Me = { id: number; username: string; email: string; is_staff: boolean };
 
 export default function Perfil() {
   const router = useRouter();
   const theme = useTheme();
-  const { signOut } = useAuth();
-  const [me, setMe] = useState<Me | null>(null);
-
-  useEffect(() => {
-    apiFetch("/me/")
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setMe)
-      .catch(() => setMe(null));
-  }, []);
+  const { user, isStaff, signOut } = useAuth();
 
   return (
     <ThemedView style={styles.flex}>
@@ -33,16 +21,39 @@ export default function Perfil() {
         <View style={styles.container}>
           <ThemedText type="subtitle">Perfil</ThemedText>
 
-          {me && (
+          {user && (
             <ThemedView type="backgroundElement" style={styles.card}>
-              <ThemedText type="smallBold">{me.username}</ThemedText>
+              <ThemedText type="smallBold">{user.username}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {me.email || "Sin correo registrado"}
+                {user.email || "Sin correo registrado"}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {me.is_staff ? "Administrador" : "Cliente"}
+                {isStaff ? "Administrador" : "Cliente"}
               </ThemedText>
             </ThemedView>
+          )}
+
+          {isStaff && (
+            <Pressable
+              onPress={() => router.push("/admin/prenda-form")}
+              accessibilityRole="button"
+            >
+              <ThemedView type="backgroundElement" style={styles.menuRow}>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={22}
+                  color={theme.text}
+                />
+                <ThemedText type="smallBold" style={styles.menuText}>
+                  Nueva prenda
+                </ThemedText>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={theme.textSecondary}
+                />
+              </ThemedView>
+            </Pressable>
           )}
 
           <Pressable

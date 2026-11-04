@@ -1,18 +1,22 @@
 import {
-    createContext,
-    useContext,
-    useEffect,
-    useState,
-    type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
 } from "react";
 
 import { API_URL } from "@/config/api";
-import { setUnauthorizedHandler } from "@/services/api";
+import { apiFetch, setUnauthorizedHandler } from "@/services/api";
 import { fetchWithTimeout } from "@/services/http";
 import { deleteToken, getToken, saveToken } from "@/services/tokenStorage";
 
+type User = { id: number; username: string; email: string; is_staff: boolean };
+
 type AuthContextType = {
   token: string | null;
+  user: User | null;
+  isStaff: boolean;
   loading: boolean;
   signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -22,6 +26,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => setUnauthorizedHandler(null);
   }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    apiFetch("/me/")
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, [token]);
 
   const signIn = async (newToken: string) => {
     await saveToken(newToken);
@@ -57,7 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, loading, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isStaff: user?.is_staff ?? false,
+        loading,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
