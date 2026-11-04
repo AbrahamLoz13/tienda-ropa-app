@@ -34,26 +34,66 @@ export default function Perfil() {
           )}
 
           {isStaff && (
-            <Pressable
-              onPress={() => router.push("/admin/prenda-form")}
-              accessibilityRole="button"
-            >
-              <ThemedView type="backgroundElement" style={styles.menuRow}>
-                <Ionicons
-                  name="add-circle-outline"
-                  size={22}
-                  color={theme.text}
-                />
-                <ThemedText type="smallBold" style={styles.menuText}>
-                  Nueva prenda
-                </ThemedText>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={theme.textSecondary}
-                />
-              </ThemedView>
-            </Pressable>
+            <>
+              <Pressable
+                onPress={() => router.push("/admin/prendas")}
+                accessibilityRole="button"
+              >
+                <ThemedView type="backgroundElement" style={styles.menuRow}>
+                  <Ionicons name="list-outline" size={22} color={theme.text} />
+                  <ThemedText type="smallBold" style={styles.menuText}>
+                    Administrar prendas
+                  </ThemedText>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={theme.textSecondary}
+                  />
+                </ThemedView>
+              </Pressable>
+
+              <Pressable
+                onPress={() => router.push("/admin/categorias")}
+                accessibilityRole="button"
+              >
+                <ThemedView type="backgroundElement" style={styles.menuRow}>
+                  <Ionicons
+                    name="albums-outline"
+                    size={22}
+                    color={theme.text}
+                  />
+                  <ThemedText type="smallBold" style={styles.menuText}>
+                    Administrar categorías
+                  </ThemedText>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={theme.textSecondary}
+                  />
+                </ThemedView>
+              </Pressable>
+
+              <Pressable
+                onPress={() => router.push("/admin/prenda-form")}
+                accessibilityRole="button"
+              >
+                <ThemedView type="backgroundElement" style={styles.menuRow}>
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={22}
+                    color={theme.text}
+                  />
+                  <ThemedText type="smallBold" style={styles.menuText}>
+                    Nueva prenda
+                  </ThemedText>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={theme.textSecondary}
+                  />
+                </ThemedView>
+              </Pressable>
+            </>
           )}
 
           <Pressable

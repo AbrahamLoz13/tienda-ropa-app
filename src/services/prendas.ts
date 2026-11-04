@@ -1,3 +1,4 @@
+import { buildMultipart } from "@/services/multipart";
 import { File } from "expo-file-system";
 
 import { apiFetch } from "@/services/api";
@@ -153,4 +154,36 @@ export async function actualizarPrenda(
 export async function eliminarPrenda(id: number): Promise<void> {
   const res = await apiFetch(`/api/prendas/${id}/`, { method: "DELETE" });
   if (!res.ok) throw new Error("SERVIDOR");
+}
+export async function agregarImagen(
+  prendaId: number,
+  uri: string,
+  descripcion = "",
+): Promise<Prenda["imagenes"][number]> {
+  const { body, contentType } = await buildMultipart(
+    { descripcion },
+    { campo: "imagen", uri },
+  );
+  const res = await apiFetch(`/api/prendas/${prendaId}/imagenes/`, {
+    method: "POST",
+    headers: { "Content-Type": contentType },
+    body: body as unknown as BodyInit,
+  });
+  if (res.status === 400) {
+    const data = await res.json().catch(() => null);
+    const msg = data?.imagen?.[0] ?? "La imagen no es válida.";
+    throw new Error(msg);
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function eliminarImagen(
+  prendaId: number,
+  imagenId: number,
+): Promise<void> {
+  const res = await apiFetch(`/api/prendas/${prendaId}/imagenes/${imagenId}/`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }

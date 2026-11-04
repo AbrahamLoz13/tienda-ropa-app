@@ -1,3 +1,5 @@
+import { GaleriaEditor } from "@/components/galeria-editor";
+import type { Prenda } from "@/types/prenda";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -71,6 +73,7 @@ export default function PrendaForm() {
   }>();
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [galeria, setGaleria] = useState<Prenda["imagenes"]>([]);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
   const [marca, setMarca] = useState("");
@@ -103,6 +106,7 @@ export default function PrendaForm() {
         setTalla(p.talla);
         setCategoria(p.categoria);
         setImagenActual(p.imagen);
+        setGaleria(p.imagenes ?? []);
       } else if (categoriaParam) {
         setCategoria(Number(categoriaParam));
       }
@@ -257,7 +261,13 @@ export default function PrendaForm() {
             </ThemedText>
           ) : null}
         </View>
-
+        {id ? (
+          <GaleriaEditor prendaId={Number(id)} inicial={galeria} />
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            Guarda la prenda para poder agregar más fotos a su galería.
+          </ThemedText>
+        )}
         <TextField
           label="Nombre"
           value={nombre}

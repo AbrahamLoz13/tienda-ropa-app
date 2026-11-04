@@ -15,6 +15,7 @@ export type Prenda = {
   stock: number;
   imagen: string | null;
   categoria: number;
+  es_favorito: boolean;
   categoria_nombre: string;
   imagenes: ImagenPrenda[];
   creado: string;

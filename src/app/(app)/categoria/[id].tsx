@@ -1,26 +1,29 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
-    Stack,
-    useFocusEffect,
-    useLocalSearchParams,
-    useRouter,
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
 } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
 } from "react-native";
 
 import { PrendaCard } from "@/components/prenda-card";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
-import { useSettings } from "@/context/SettingsContext";
+import { useAuth } from "@/context/AuthContext";
 import { getPrendas } from "@/services/prendas";
 import type { Prenda } from "@/types/prenda";
+
+const PAGE_SIZE = 10;
 
 export default function PrendasPorCategoria() {
   const { id, nombre } = useLocalSearchParams<{
@@ -28,7 +31,7 @@ export default function PrendasPorCategoria() {
     nombre?: string;
   }>();
   const router = useRouter();
-  const { pageSize } = useSettings();
+  const { isStaff } = useAuth();
   const categoriaId = id && id !== "todas" ? id : undefined;
 
   const [prendas, setPrendas] = useState<Prenda[]>([]);
@@ -43,7 +46,7 @@ export default function PrendasPorCategoria() {
     async (p: number, reemplazar: boolean) => {
       try {
         setError(false);
-        const data = await getPrendas(p, pageSize, { categoria: categoriaId });
+        const data = await getPrendas(p, PAGE_SIZE, { categoria: categoriaId });
         setPrendas((prev) =>
           reemplazar ? data.results : [...prev, ...data.results],
         );
@@ -53,11 +56,12 @@ export default function PrendasPorCategoria() {
         setError(true);
       }
     },
-    [categoriaId, pageSize],
+    [categoriaId],
   );
 
+  // La primera vez muestra el indicador de carga; al volver a la pantalla
+  // (por ejemplo tras editar o borrar una prenda) refresca en silencio.
   const primeraVez = useRef(true);
-
   useFocusEffect(
     useCallback(() => {
       if (primeraVez.current) {
@@ -157,7 +161,26 @@ export default function PrendasPorCategoria() {
   return (
     <ThemedView style={styles.flex}>
       <Stack.Screen
-        options={{ headerShown: true, title: nombre ?? "Prendas" }}
+        options={{
+          headerShown: true,
+          title: nombre ?? "Prendas",
+          headerRight: () =>
+            isStaff ? (
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: "/admin/prenda-form",
+                    params: categoriaId ? { categoria: categoriaId } : {},
+                  })
+                }
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Agregar prenda"
+              >
+                <Ionicons name="add-circle-outline" size={28} color="#208AEF" />
+              </Pressable>
+            ) : null,
+        }}
       />
       {renderBody()}
     </ThemedView>

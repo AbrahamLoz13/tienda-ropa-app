@@ -1,47 +1,67 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    View,
-    useWindowDimensions,
-    type NativeScrollEvent,
-    type NativeSyntheticEvent,
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+import { useCallback, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
 
 import { PrimaryButton } from "@/components/primary-button";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
-import { getPrenda, toggleFavorito } from "@/services/prendas";
+import { eliminarPrenda, getPrenda, toggleFavorito } from "@/services/prendas";
 import type { Prenda } from "@/types/prenda";
 
 export default function DetallePrenda() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const theme = useTheme();
+  const { isStaff } = useAuth();
   const { width } = useWindowDimensions();
 
   const [prenda, setPrenda] = useState<Prenda | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [indice, setIndice] = useState(0);
+  const [borrando, setBorrando] = useState(false);
 
-  const cargar = () => {
-    setLoading(true);
+  const cargar = useCallback(() => {
     setError(false);
-    getPrenda(id)
+    return getPrenda(id)
       .then(setPrenda)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  };
+      .catch(() => setError(true));
+  }, [id]);
 
-  useEffect(cargar, [id]);
+  // Recarga cada vez que la pantalla vuelve a verse (por ejemplo, tras editar)
+  const primeraVez = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (primeraVez.current) {
+        primeraVez.current = false;
+        setLoading(true);
+        cargar().finally(() => setLoading(false));
+      } else {
+        cargar();
+      }
+    }, [cargar]),
+  );
 
   const onFavorito = async () => {
     if (!prenda) return;
@@ -53,6 +73,40 @@ export default function DetallePrenda() {
     } catch {
       setPrenda((p) => (p ? { ...p, es_favorito: anterior } : p));
     }
+  };
+
+  const editar = () => {
+    if (!prenda) return;
+    router.push({
+      pathname: "/admin/prenda-form",
+      params: { id: String(prenda.id) },
+    });
+  };
+
+  const confirmarEliminar = () => {
+    if (!prenda) return;
+    Alert.alert(
+      "Eliminar prenda",
+      `¿Seguro que quieres eliminar "${prenda.nombre}"? No se puede deshacer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setBorrando(true);
+              await eliminarPrenda(prenda.id);
+              router.back();
+            } catch {
+              Alert.alert("Error", "No se pudo eliminar. Intenta de nuevo.");
+            } finally {
+              setBorrando(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -89,17 +143,25 @@ export default function DetallePrenda() {
     );
   }
 
-  if (error || !prenda) {
+  if (error && !prenda) {
     return (
       <ThemedView style={styles.center}>
         <Stack.Screen options={{ headerShown: true, title: "" }} />
         <ThemedText>No se pudo cargar la prenda.</ThemedText>
         <View style={styles.retry}>
-          <PrimaryButton title="Reintentar" onPress={cargar} />
+          <PrimaryButton
+            title="Reintentar"
+            onPress={() => {
+              setLoading(true);
+              cargar().finally(() => setLoading(false));
+            }}
+          />
         </View>
       </ThemedView>
     );
   }
+
+  if (!prenda) return null;
 
   return (
     <ThemedView style={styles.flex}>
@@ -181,6 +243,27 @@ export default function DetallePrenda() {
               </ThemedText>
             </View>
           ) : null}
+
+          {isStaff && (
+            <View style={styles.admin}>
+              <ThemedText type="smallBold">Administración</ThemedText>
+              <PrimaryButton title="Editar prenda" onPress={editar} />
+              <Pressable
+                onPress={confirmarEliminar}
+                disabled={borrando}
+                accessibilityRole="button"
+                style={[styles.delete, borrando && styles.deleteDisabled]}
+              >
+                {borrando ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <ThemedText style={styles.deleteText}>
+                    Eliminar prenda
+                  </ThemedText>
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
       </ScrollView>
     </ThemedView>
@@ -217,4 +300,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   desc: { gap: Spacing.one, marginTop: Spacing.two },
+  admin: { gap: Spacing.two, marginTop: Spacing.four },
+  delete: {
+    backgroundColor: "#d9534f",
+    height: 48,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteDisabled: { opacity: 0.6 },
+  deleteText: { color: "#fff", fontWeight: "700" },
 });
