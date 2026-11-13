@@ -1,3 +1,5 @@
+import { ColorDot } from "@/components/color-dot";
+import { useCatalogo } from "@/context/CatalogoContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import {
@@ -25,7 +27,9 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { useTheme } from "@/hooks/use-theme";
+import { agregarAlCarrito } from "@/services/carrito";
 import { eliminarPrenda, getPrenda, toggleFavorito } from "@/services/prendas";
 import type { Prenda } from "@/types/prenda";
 
@@ -34,13 +38,16 @@ export default function DetallePrenda() {
   const router = useRouter();
   const theme = useTheme();
   const { isStaff } = useAuth();
+  const { refresh: refrescarCarrito } = useCart();
   const { width } = useWindowDimensions();
-
   const [prenda, setPrenda] = useState<Prenda | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [indice, setIndice] = useState(0);
   const [borrando, setBorrando] = useState(false);
+  const [cantidad, setCantidad] = useState(1);
+  const [agregando, setAgregando] = useState(false);
+  const { colorPorValor } = useCatalogo();
 
   const cargar = useCallback(() => {
     setError(false);
@@ -49,7 +56,6 @@ export default function DetallePrenda() {
       .catch(() => setError(true));
   }, [id]);
 
-  // Recarga cada vez que la pantalla vuelve a verse (por ejemplo, tras editar)
   const primeraVez = useRef(true);
   useFocusEffect(
     useCallback(() => {
@@ -72,6 +78,27 @@ export default function DetallePrenda() {
       setPrenda((p) => (p ? { ...p, es_favorito: real } : p));
     } catch {
       setPrenda((p) => (p ? { ...p, es_favorito: anterior } : p));
+    }
+  };
+
+  const agregar = async () => {
+    if (!prenda) return;
+    try {
+      setAgregando(true);
+      await agregarAlCarrito(prenda.id, cantidad);
+      await refrescarCarrito();
+      Alert.alert("Añadido al carrito", `${cantidad} × ${prenda.nombre}`, [
+        { text: "Seguir viendo", style: "cancel" },
+        { text: "Ver carrito", onPress: () => router.push("/carrito") },
+      ]);
+      setCantidad(1);
+    } catch (e) {
+      Alert.alert(
+        "No se pudo añadir",
+        e instanceof Error ? e.message : "Intenta de nuevo.",
+      );
+    } finally {
+      setAgregando(false);
     }
   };
 
@@ -163,6 +190,9 @@ export default function DetallePrenda() {
 
   if (!prenda) return null;
 
+  const hayStock = prenda.stock > 0;
+  const cant = Math.min(cantidad, Math.max(prenda.stock, 1));
+
   return (
     <ThemedView style={styles.flex}>
       <Stack.Screen
@@ -225,12 +255,17 @@ export default function DetallePrenda() {
             <ThemedView type="backgroundElement" style={styles.chip}>
               <ThemedText type="small">Talla {prenda.talla}</ThemedText>
             </ThemedView>
-            <ThemedView type="backgroundElement" style={styles.chip}>
-              <ThemedText type="small">{prenda.color}</ThemedText>
+            <ThemedView type="backgroundElement" style={styles.chipColor}>
+              <ColorDot
+                hex={colorPorValor(prenda.color)?.hex ?? "#bdbdbd"}
+                multicolor={prenda.color === "multicolor"}
+                size={14}
+              />
+              <ThemedText type="small">{prenda.color_nombre}</ThemedText>
             </ThemedView>
             <ThemedView type="backgroundElement" style={styles.chip}>
               <ThemedText type="small">
-                {prenda.stock > 0 ? `${prenda.stock} disponibles` : "Agotado"}
+                {hayStock ? `${prenda.stock} disponibles` : "Agotado"}
               </ThemedText>
             </ThemedView>
           </View>
@@ -243,6 +278,48 @@ export default function DetallePrenda() {
               </ThemedText>
             </View>
           ) : null}
+
+          <View style={styles.compra}>
+            {hayStock && (
+              <View style={styles.stepperFila}>
+                <ThemedText type="smallBold">Cantidad</ThemedText>
+                <View style={styles.stepper}>
+                  <Pressable
+                    onPress={() => setCantidad(Math.max(1, cant - 1))}
+                    disabled={cant <= 1 || agregando}
+                    hitSlop={6}
+                    accessibilityLabel="Menos"
+                    style={[styles.boton, cant <= 1 && styles.botonOff]}
+                  >
+                    <Ionicons name="remove" size={20} color={theme.text} />
+                  </Pressable>
+                  <ThemedText type="smallBold" style={styles.cantidad}>
+                    {cant}
+                  </ThemedText>
+                  <Pressable
+                    onPress={() =>
+                      setCantidad(Math.min(prenda.stock, cant + 1))
+                    }
+                    disabled={cant >= prenda.stock || agregando}
+                    hitSlop={6}
+                    accessibilityLabel="Más"
+                    style={[
+                      styles.boton,
+                      cant >= prenda.stock && styles.botonOff,
+                    ]}
+                  >
+                    <Ionicons name="add" size={20} color={theme.text} />
+                  </Pressable>
+                </View>
+              </View>
+            )}
+            <PrimaryButton
+              title={hayStock ? "Añadir al carrito" : "Agotado"}
+              onPress={agregar}
+              loading={agregando}
+              disabled={!hayStock}
+            />
+          </View>
 
           {isStaff && (
             <View style={styles.admin}>
@@ -299,7 +376,33 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     borderRadius: 16,
   },
+  chipColor: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: 16,
+  },
   desc: { gap: Spacing.one, marginTop: Spacing.two },
+  compra: { gap: Spacing.three, marginTop: Spacing.three },
+  stepperFila: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  stepper: { flexDirection: "row", alignItems: "center", gap: Spacing.three },
+  boton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#8884",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  botonOff: { opacity: 0.35 },
+  cantidad: { minWidth: 24, textAlign: "center" },
   admin: { gap: Spacing.two, marginTop: Spacing.four },
   delete: {
     backgroundColor: "#d9534f",

@@ -1,8 +1,8 @@
-import { buildMultipart } from "@/services/multipart";
-import { File } from "expo-file-system";
-
 import { apiFetch } from "@/services/api";
+import { buildMultipart } from "@/services/multipart";
+import type { ColorOpcion } from "@/types/color";
 import type { Pagina, Prenda } from "@/types/prenda";
+import { File } from "expo-file-system";
 
 type Filtros = Record<string, string | number | undefined>;
 
@@ -155,6 +155,7 @@ export async function eliminarPrenda(id: number): Promise<void> {
   const res = await apiFetch(`/api/prendas/${id}/`, { method: "DELETE" });
   if (!res.ok) throw new Error("SERVIDOR");
 }
+
 export async function agregarImagen(
   prendaId: number,
   uri: string,
@@ -186,4 +187,16 @@ export async function eliminarImagen(
     method: "DELETE",
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+
+export async function getMarcas(): Promise<string[]> {
+  const res = await apiFetch("/api/marcas/");
+  if (!res.ok) throw new Error("SERVIDOR");
+  return res.json();
+}
+
+export async function getColores(): Promise<ColorOpcion[]> {
+  const res = await apiFetch("/api/colores/");
+  if (!res.ok) throw new Error("SERVIDOR");
+  return res.json();
 }

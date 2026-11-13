@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import type { ComponentProps } from "react";
-import { useColorScheme } from "react-native";
+import { useColorScheme, type ColorValue } from "react-native";
 
 import { Colors } from "@/constants/theme";
+import { useCart } from "@/context/CartContext";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -13,17 +14,22 @@ function icon(activo: IconName, inactivo: IconName) {
     size,
     focused,
   }: {
-    color: string;
+    color: ColorValue;
     size: number;
     focused: boolean;
   }) => (
-    <Ionicons name={focused ? activo : inactivo} size={size} color={color} />
+    <Ionicons
+      name={focused ? activo : inactivo}
+      size={size}
+      color={color as string}
+    />
   );
 }
 
 export default function TabsLayout() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "dark" ? "dark" : "light"];
+  const { piezas } = useCart();
 
   return (
     <Tabs
@@ -46,6 +52,14 @@ export default function TabsLayout() {
         options={{
           title: "Catálogo",
           tabBarIcon: icon("shirt", "shirt-outline"),
+        }}
+      />
+      <Tabs.Screen
+        name="carrito"
+        options={{
+          title: "Carrito",
+          tabBarIcon: icon("cart", "cart-outline"),
+          tabBarBadge: piezas > 0 ? piezas : undefined,
         }}
       />
       <Tabs.Screen

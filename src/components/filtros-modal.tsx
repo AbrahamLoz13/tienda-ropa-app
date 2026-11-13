@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { ColorChip } from "@/components/color-chip";
 import { PrimaryButton } from "@/components/primary-button";
 import { TextField } from "@/components/text-field";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useCatalogo } from "@/context/CatalogoContext";
 import { useTheme } from "@/hooks/use-theme";
 
 export type FiltrosState = {
   tallas: string[];
-  color: string;
+  colores: string[];
   precioMin: string;
   precioMax: string;
   orden: string;
@@ -18,7 +20,7 @@ export type FiltrosState = {
 
 export const FILTROS_VACIOS: FiltrosState = {
   tallas: [],
-  color: "",
+  colores: [],
   precioMin: "",
   precioMax: "",
   orden: "-creado",
@@ -67,6 +69,7 @@ function Chip({
 
 export function FiltrosModal({ visible, inicial, onClose, onApply }: Props) {
   const theme = useTheme();
+  const { colores } = useCatalogo();
   const [f, setF] = useState<FiltrosState>(inicial);
 
   const toggleTalla = (t: string) =>
@@ -75,6 +78,14 @@ export function FiltrosModal({ visible, inicial, onClose, onApply }: Props) {
       tallas: p.tallas.includes(t)
         ? p.tallas.filter((x) => x !== t)
         : [...p.tallas, t],
+    }));
+
+  const toggleColor = (c: string) =>
+    setF((p) => ({
+      ...p,
+      colores: p.colores.includes(c)
+        ? p.colores.filter((x) => x !== c)
+        : [...p.colores, c],
     }));
 
   return (
@@ -111,13 +122,17 @@ export function FiltrosModal({ visible, inicial, onClose, onApply }: Props) {
               ))}
             </View>
 
-            <TextField
-              label="Color"
-              value={f.color}
-              onChangeText={(color) => setF((p) => ({ ...p, color }))}
-              autoCapitalize="none"
-              placeholder="Ej. negro"
-            />
+            <ThemedText type="smallBold">Color</ThemedText>
+            <View style={styles.row}>
+              {colores.map((c) => (
+                <ColorChip
+                  key={c.valor}
+                  color={c}
+                  activo={f.colores.includes(c.valor)}
+                  onPress={() => toggleColor(c.valor)}
+                />
+              ))}
+            </View>
 
             <ThemedText type="smallBold">Precio</ThemedText>
             <View style={styles.row}>

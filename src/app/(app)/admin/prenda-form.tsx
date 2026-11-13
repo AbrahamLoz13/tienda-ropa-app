@@ -6,28 +6,31 @@ import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
 } from "react-native";
 
+import { ColorChip } from "@/components/color-chip";
 import { PrimaryButton } from "@/components/primary-button";
 import { TextField } from "@/components/text-field";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
+import { useCatalogo } from "@/context/CatalogoContext";
 import { useTheme } from "@/hooks/use-theme";
 import { getCategorias } from "@/services/categorias";
 import {
-    actualizarPrenda,
-    crearPrenda,
-    getPrenda,
-    type ApiValidationError,
-    type PrendaInput,
+  actualizarPrenda,
+  crearPrenda,
+  getMarcas,
+  getPrenda,
+  type ApiValidationError,
+  type PrendaInput,
 } from "@/services/prendas";
 import type { Categoria } from "@/types/categoria";
 
@@ -67,12 +70,14 @@ export default function PrendaForm() {
   const router = useRouter();
   const theme = useTheme();
   const { isStaff } = useAuth();
+  const { colores } = useCatalogo();
   const { id, categoria: categoriaParam } = useLocalSearchParams<{
     id?: string;
     categoria?: string;
   }>();
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [marcas, setMarcas] = useState<string[]>([]);
   const [galeria, setGaleria] = useState<Prenda["imagenes"]>([]);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
@@ -95,6 +100,7 @@ export default function PrendaForm() {
       setLoadError(false);
       setLoading(true);
       setCategorias(await getCategorias());
+      setMarcas(await getMarcas());
       if (id) {
         const p = await getPrenda(id);
         setNombre(p.nombre);
@@ -135,7 +141,7 @@ export default function PrendaForm() {
     if (nombre.trim().length < 2) e.nombre = "Mínimo 2 caracteres.";
     if (!precio.trim() || Number.isNaN(p) || p <= 0)
       e.precio = "Ingresa un precio mayor a 0.";
-    if (!color.trim()) e.color = "Ingresa el color.";
+    if (!color) e.color = "Elige un color.";
     if (!/^\d+$/.test(stock.trim())) e.stock = "Ingresa un número entero.";
     if (categoria === null) e.categoria = "Elige una categoría.";
     setErrors(e);
@@ -151,7 +157,7 @@ export default function PrendaForm() {
         descripcion: descripcion.trim(),
         precio: precio.trim().replace(",", "."),
         talla,
-        color: color.trim(),
+        color,
         marca: marca.trim(),
         stock: stock.trim(),
         categoria,
@@ -161,14 +167,10 @@ export default function PrendaForm() {
       else await crearPrenda(datos);
       router.back();
     } catch (e) {
-      console.log("ERROR GUARDAR:", e, imagenUri);
       if (e instanceof Error && e.message === "VALIDACION") {
         setErrors((e as ApiValidationError).fields);
       } else {
-        Alert.alert(
-          "Error",
-          `No se pudo guardar.\n${e instanceof Error ? e.message : String(e)}`,
-        );
+        Alert.alert("Error", "No se pudo guardar. Revisa tu conexión.");
       }
     } finally {
       setSaving(false);
@@ -261,6 +263,7 @@ export default function PrendaForm() {
             </ThemedText>
           ) : null}
         </View>
+
         {id ? (
           <GaleriaEditor prendaId={Number(id)} inicial={galeria} />
         ) : (
@@ -268,6 +271,7 @@ export default function PrendaForm() {
             Guarda la prenda para poder agregar más fotos a su galería.
           </ThemedText>
         )}
+
         <TextField
           label="Nombre"
           value={nombre}
@@ -283,21 +287,45 @@ export default function PrendaForm() {
           editable={!saving}
           error={errors.precio}
         />
-        <TextField
-          label="Marca (opcional)"
-          value={marca}
-          onChangeText={setMarca}
-          editable={!saving}
-          error={errors.marca}
-        />
-        <TextField
-          label="Color"
-          value={color}
-          onChangeText={setColor}
-          autoCapitalize="none"
-          editable={!saving}
-          error={errors.color}
-        />
+
+        <View style={styles.block}>
+          <ThemedText type="smallBold">Marca (opcional)</ThemedText>
+          <View style={styles.chips}>
+            {marcas.map((m) => (
+              <Chip
+                key={m}
+                label={m}
+                activo={marca === m}
+                onPress={() => setMarca(marca === m ? "" : m)}
+              />
+            ))}
+          </View>
+          {errors.marca ? (
+            <ThemedText type="small" style={styles.error}>
+              {errors.marca}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        <View style={styles.block}>
+          <ThemedText type="smallBold">Color</ThemedText>
+          <View style={styles.chips}>
+            {colores.map((c) => (
+              <ColorChip
+                key={c.valor}
+                color={c}
+                activo={color === c.valor}
+                onPress={() => setColor(c.valor)}
+              />
+            ))}
+          </View>
+          {errors.color ? (
+            <ThemedText type="small" style={styles.error}>
+              {errors.color}
+            </ThemedText>
+          ) : null}
+        </View>
+
         <TextField
           label="Stock"
           value={stock}
