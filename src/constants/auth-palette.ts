@@ -1,0 +1,26 @@
+export const AuthPalette = {
+  light: {
+    overlay: "rgba(255,255,255,0)",
+    field: "rgba(255,255,255,0.78)",
+    text: "#3B2A24",
+    muted: "#8C6F63",
+    border: "rgba(59,42,36,0.18)",
+    borderFocus: "#3B2A24",
+    button: "#3B2A24",
+    buttonText: "#FBEFE8",
+    error: "#B3402F",
+    errorBg: "rgba(255,255,255,0.85)",
+  },
+  dark: {
+    overlay: "rgba(18,11,9,0.78)",
+    field: "rgba(38,28,24,0.78)",
+    text: "#F6E6DD",
+    muted: "#B79C90",
+    border: "rgba(246,230,221,0.18)",
+    borderFocus: "#F0C9B6",
+    button: "#F0C9B6",
+    buttonText: "#2A1A14",
+    error: "#F0A090",
+    errorBg: "rgba(58,32,27,0.9)",
+  },
+} as const;
