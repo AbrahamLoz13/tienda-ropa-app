@@ -11,6 +11,7 @@ export type Prenda = {
   precio: string;
   talla: string;
   color: string;
+  color_nombre: string;
   marca: string | null;
   stock: number;
   imagen: string | null;

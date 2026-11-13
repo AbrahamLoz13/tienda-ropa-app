@@ -1,25 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
-    Stack,
-    useFocusEffect,
-    useLocalSearchParams,
-    useRouter,
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
 } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    TextInput,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  TextInput,
+  View,
 } from "react-native";
 
 import {
-    FILTROS_VACIOS,
-    FiltrosModal,
-    type FiltrosState,
+  FILTROS_VACIOS,
+  FiltrosModal,
+  type FiltrosState,
 } from "@/components/filtros-modal";
 import { PrendaCard } from "@/components/prenda-card";
 import { ThemedText } from "@/components/themed-text";
@@ -62,7 +62,7 @@ export default function Buscar() {
         const data = await getPrendas(p, pageSize, {
           search: busqueda,
           talla: filtros.tallas.join(","),
-          color: filtros.color.trim(),
+          color: filtros.colores.join(","),
           precio_min: filtros.precioMin,
           precio_max: filtros.precioMax,
           ordering: filtros.orden,
@@ -110,7 +110,7 @@ export default function Buscar() {
 
   const activos =
     filtros.tallas.length +
-    (filtros.color ? 1 : 0) +
+    filtros.colores.length +
     (filtros.precioMin ? 1 : 0) +
     (filtros.precioMax ? 1 : 0) +
     (filtros.orden !== FILTROS_VACIOS.orden ? 1 : 0);
